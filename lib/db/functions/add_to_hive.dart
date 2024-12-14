@@ -1,37 +1,52 @@
-import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:student_record/db/model/data.dart';
 
-final ValueNotifier<List<StudentData>> studentNotifier = ValueNotifier([]);
+class AddStudentData extends GetxController {
+  final studentList = <StudentData>[].obs;
 
-class AddStudentData extends ChangeNotifier {
   static Future<void> addToHive(student) async {
-    final box = Hive.box<StudentData>('studentBox');
+    try{
+      final box = Hive.box<StudentData>('studentBox');
     final _id = await box.add(student);
     student.id = _id;
     await box.put(_id, student);
-    studentNotifier.value.add(student);
-    studentNotifier.notifyListeners();
+    final controller = Get.find<AddStudentData>();
+    controller.studentList.add(student);
+    } catch (e) {
+      print("Error adding student: $e");
+    }
   }
 
   static Future<void> getAllStudent() async {
-    studentNotifier.value.clear();
+   try{
+     final controller = Get.find<AddStudentData>();
+    controller.studentList.clear();
+
     final box = Hive.box<StudentData>('studentBox');
-    studentNotifier.value.addAll(box.values);
-    studentNotifier.notifyListeners();
+    controller.studentList.value = box.values.toList();
+   }catch (e) {
+      print("Error fetching students: $e");
+    }
   }
 
   static Future<void> deletData(int id) async {
-    final box = await Hive.openBox<StudentData>('studentBox');
+   try {
+      final box = await Hive.openBox<StudentData>('studentBox');
     box.delete(id);
     getAllStudent();
+   } catch (e) {
+     print("Error deleting student: $e");
+   }
   }
 
   static Future<void> updateData(StudentData student) async {
-    final box = await Hive.openBox<StudentData>('studentBox');
+  try {
+      final box = await Hive.openBox<StudentData>('studentBox');
     await box.put(student.id, student);
-    
     getAllStudent();
-
+  } catch (e) {
+    print("Error updating student: $e");
+  }
   }
 }
